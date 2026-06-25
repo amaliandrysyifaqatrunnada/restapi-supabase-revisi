@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Informasi Mahasiswa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+    <!-- LOGIN SECTION -->
+    <div id="login-section" class="flex items-center justify-center min-h-screen">
+        <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
+            <div class="text-center mb-8">
+                <div class="inline-block p-4 bg-indigo-100 rounded-full mb-4">
+                    <i class="fas fa-user-graduate text-indigo-600 text-3xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-800">Selamat Datang</h1>
+                <p class="text-gray-500">Silahkan login ke akun Supabase Anda</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" id="login-email" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition" placeholder="admin@example.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="login-password" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition" placeholder="••••••••">
+                </div>
+                <button onclick="handleLogin()" class="w-full gradient-bg text-white py-2 rounded-lg font-semibold hover:opacity-90 transition shadow-lg">
+                    Login <i class="fas fa-sign-in-alt ml-2"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT (Hidden by default) -->
+    <div id="main-content" class="hidden">
+        <nav class="gradient-bg text-white shadow-lg p-4 mb-8">
+            <div class="container mx-auto flex justify-between items-center">
+                <h2 class="text-xl font-bold flex items-center gap-2">
+                    <i class="fas fa-database"></i> SIM Mahasiswa
+                </h2>
+                <button onclick="handleLogout()" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg text-sm transition">
+                    Logout <i class="fas fa-power-off ml-2"></i>
+                </button>
+            </div>
+        </nav>
+
+        <div class="container mx-auto px-4 max-w-5xl">
+            <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4"><i class="fas fa-plus-circle text-indigo-600 mr-2"></i>Tambah Mahasiswa</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <input type="text" id="mhs-nama" placeholder="Nama Lengkap" class="px-4 py-2 border rounded-lg outline-none focus:border-indigo-500">
+                    <input type="text" id="mhs-nim" placeholder="NIM" class="px-4 py-2 border rounded-lg outline-none focus:border-indigo-500">
+                    <input type="text" id="mhs-jurusan" placeholder="Jurusan" class="px-4 py-2 border rounded-lg outline-none focus:border-indigo-500">
+                </div>
+                <button onclick="createMahasiswa()" class="mt-4 bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition">
+                    Simpan Data
+                </button>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-gray-50 border-b">
+                        <tr>
+                            <th class="p-4 font-semibold text-gray-700">Nama</th>
+                            <th class="p-4 font-semibold text-gray-700">NIM</th>
+                            <th class="p-4 font-semibold text-gray-700">Jurusan</th>
+                            <th class="p-4 font-semibold text-gray-700 text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mhs-table-body">
+                        <!-- Data injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://127.0.0.1:8000";
+        let TOKEN = localStorage.getItem("jwt_token");
+
+        window.onload = () => {
+            if (TOKEN) {
+                showDashboard();
+            }
+        };
+
+        function showDashboard() {
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
+            loadMahasiswa();
+        }
+
+        async function handleLogin() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                const response = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    TOKEN = data.access_token;
+                    localStorage.setItem("jwt_token", TOKEN);
+                    Swal.fire('Berhasil!', 'Login Berhasil', 'success');
+                    showDashboard();
+                } else {
+                    Swal.fire('Error', 'Login Gagal: ' + (data.detail || 'Email/Password Salah'), 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Gagal menghubungi server', 'error');
+            }
+        }
+
+        function handleLogout() {
+            localStorage.removeItem("jwt_token");
+            location.reload();
+        }
+
+        async function loadMahasiswa() {
+            try {
+                const response = await fetch(`${API_URL}/mahasiswa`, {
+                    headers: { 'Authorization': `Bearer ${TOKEN}` }
+                });
+                const data = await response.json();
+                
+                const tableBody = document.getElementById('mhs-table-body');
+                tableBody.innerHTML = "";
+
+                if (Array.isArray(data)) {
+                    data.forEach(mhs => {
+                        tableBody.innerHTML += `
+                            <tr class="border-b hover:bg-gray-50 transition">
+                                <td class="p-4">${mhs.nama}</td>
+                                <td class="p-4 text-gray-600">${mhs.nim}</td>
+                                <td class="p-4"><span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-xs">${mhs.jurusan}</span></td>
+                                <td class="p-4 text-center">
+                                    <button onclick="deleteMahasiswa('${mhs.id}')" class="text-red-500 hover:text-red-700 mx-2">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+            } catch (err) {
+                console.error("Gagal memuat data", err);
+            }
+        }
+
+        async function createMahasiswa() {
+            const nama = document.getElementById('mhs-nama').value;
+            const nim = document.getElementById('mhs-nim').value;
+            const jurusan = document.getElementById('mhs-jurusan').value;
+
+            if (!nama || !nim || !jurusan) return Swal.fire('Oops', 'Lengkapi semua field', 'warning');
+
+            try {
+                const response = await fetch(`${API_URL}/mahasiswa`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${TOKEN}`
+                    },
+                    body: JSON.stringify({ nama, nim, jurusan })
+                });
+
+                if (response.ok) {
+                    Swal.fire('Berhasil', 'Data mahasiswa ditambahkan', 'success');
+                    clearInputs();
+                    loadMahasiswa();
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Gagal menyimpan data', 'error');
+            }
+        }
+
+        async function deleteMahasiswa(id) {
+            const confirm = await Swal.fire({
+                title: 'Apakah anda yakin?',
+                text: "Data akan dihapus permanen",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, Hapus!'
+            });
+
+            if (confirm.isConfirmed) {
+                try {
+                    const response = await fetch(`${API_URL}/mahasiswa/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${TOKEN}` }
+                    });
+                    if (response.ok) {
+                        Swal.fire('Terhapus!', 'Data telah dihapus.', 'success');
+                        loadMahasiswa();
+                    }
+                } catch (err) {
+                    Swal.fire('Error', 'Gagal menghapus data', 'error');
+                }
+            }
+        }
+
+        function clearInputs() {
+            document.getElementById('mhs-nama').value = "";
+            document.getElementById('mhs-nim').value = "";
+            document.getElementById('mhs-jurusan').value = "";
+        }
+    </script>
+</body>
+</html>

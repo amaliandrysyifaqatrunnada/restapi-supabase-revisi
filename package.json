@@ -1,0 +1,15 @@
+{
+  "name": "restapisupabase-main",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Supabase REST API proxy in Node.js",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2"
+  }
+}
